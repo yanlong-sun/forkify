@@ -2,13 +2,10 @@ import * as model from './model.js';
 import recipeView from './views/recipeView.js';
 import searchView from './views/searchView.js';
 import resultView from './views/resultView.js';
+import paginationView from './views/paginationView.js';
 
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
-
-if (module.hot) {
-  module.hot.accept();
-}
 
 const controlRecipes = async function () {
   try {
@@ -33,14 +30,33 @@ const controlSearchResults = async function () {
     if (!query) return;
     await model.loadSearchResult(query);
     // 3) render results
-    resultView.render(model.getSearchResultsPage(1));
+    resultView.render(model.getSearchResultsPage());
+    // 4) render initial pagination options
+    paginationView.render(model.state.search);
   } catch (err) {
     console.log(err);
   }
 };
 
+const controlPagination = function (pageGoTo) {
+  // render new results
+  resultView.render(model.getSearchResultsPage(pageGoTo));
+  // render new pagination options
+  paginationView.render(model.state.search);
+};
+
+const controlServings = function (updateServings) {
+  // update the recipe serveings(in state)
+  model.updateServings(updateServings);
+  // update the recipe view (only change the changed part
+  // instead of the whole recipe, so created a new method)
+  recipeView.update(model.state.recipe);
+};
+
 const init = function () {
   recipeView.addHandlerRender(controlRecipes);
+  recipeView.addHandlerUpdateServings(controlServings);
   searchView.addHandlerSearch(controlSearchResults);
+  paginationView.addHandlerClick(controlPagination);
 };
 init();
